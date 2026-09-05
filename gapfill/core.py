@@ -120,7 +120,6 @@ def features(frame, indices):
         for col in SENSORS + AUX:
             for key, value in _neighbors(times, season[col].to_numpy(dtype=float), tt, col, 1).items():
                 x[key] = value
-        # Other-year historical context. Hidden labels cannot contribute, even indirectly.
         history = all_field[(all_field.year != year) & all_field.primary_ndvi.notna()]
         ht = history.doy.to_numpy(dtype=float)
         hy = history.primary_ndvi.to_numpy(dtype=float)
@@ -131,7 +130,6 @@ def features(frame, indices):
         x['historical_mean'] = mean
         x['historical_std'] = np.sqrt(np.maximum(variance,0))
         x['historical_years'] = history.year.nunique()
-        # Conservative default for a completely empty series; exposed as low support in UI.
         x['baseline'] = x.ndvi_linear.fillna(x.historical_mean).fillna(.35)
         x['pchip'] = x.pchip.fillna(x.baseline)
         x['neighbor_mean'] = x.neighbor_mean.fillna(x.baseline)

@@ -1,4 +1,3 @@
-"""Transparent seasonal anomaly rules; not a crop-specific damage model."""
 import numpy as np
 import pandas as pd
 
@@ -58,7 +57,6 @@ def anomaly_episodes(rows):
                              'min_zscore':min(zs) if zs else None,
                              'temperature_zscore_extreme':max(tzs,key=abs) if tzs else None,'explanation':explanation})
         for row in rows:
-            # Missing calendar dates or missing measurements break persistence.
             if active and (pd.Timestamp(row['date'])-pd.Timestamp(active[-1]['date'])).days!=1:
                 finish(); active=[]
             if kind in row['anomaly_types']:

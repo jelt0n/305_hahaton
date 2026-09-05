@@ -25,7 +25,6 @@ def initialize():
                 credentials = ee.ServiceAccountCredentials(email=None, key_file=key)
                 ee.Initialize(credentials=credentials, project=project)
             else:
-                # Omitting credentials loads the saved OAuth login. None disables it.
                 ee.Initialize(project=project)
             ee.data.setDeadline(90000)
             _initialized = True
@@ -55,7 +54,6 @@ def calculate(geometry, start, end_exclusive, cloud):
         return None
     images = collection.map(_ndvi)
     composite = images.median().clip(region)
-    # Fixed 10 m sampling; use the first Sentinel scene's native CRS for all statistics.
     crs = ee.Image(collection.first()).select('B4').projection()
     reducer = ee.Reducer.mean().combine(ee.Reducer.minMax(), sharedInputs=True)
     stats = composite.reduceRegion(reducer=reducer, geometry=region, scale=10, crs=crs,

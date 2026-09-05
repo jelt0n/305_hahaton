@@ -1,4 +1,3 @@
-"""Cross-field acquisition context; all query labels remain masked."""
 import numpy as np
 import pandas as pd
 from gapfill.core import prepare, conceal, clean_context, SENSORS
@@ -6,7 +5,6 @@ from gapfill.core import prepare, conceal, clean_context, SENSORS
 
 def peer_features(frame,indices):
     df=prepare(frame);ctx=clean_context(conceal(df,indices))
-    # Residual of each observed peer relative to that peer's OTHER dates.
     residuals={}
     for col in SENSORS:
         residual=pd.Series(np.nan,index=ctx.index)
@@ -27,7 +25,6 @@ def peer_features(frame,indices):
                                             residual_mean=('residual','mean'),residual_median=('residual','median'),residual_std=('residual','std'))
             for key in daily:
                 x[f'peer_{col}_{key}']=target.date.map(daily[key]).to_numpy()
-            # Estimate field-to-peer offsets from visible, coincident dates only.
             own_values=own.set_index('date')[col].dropna()
             candidates=[]
             for peer_id,peer in peers[peers[col].notna()].groupby('anon_polygon_id'):

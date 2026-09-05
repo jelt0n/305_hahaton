@@ -1,4 +1,3 @@
-"""Real multi-sensor time series; no fabricated observations."""
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 import numpy as np
@@ -41,7 +40,6 @@ def collect(geometry, start, end, cloud=60, source='all', history_years=3):
     region=ee.Geometry(geometry)
     first=pd.Timestamp(start); last=pd.Timestamp(end)
     windows=[]
-    # Same seasonal window in preceding years; 20-day margins support interpolation.
     for years in range(history_years+1):
         a=first-pd.DateOffset(years=years)-pd.Timedelta(days=20)
         b=last-pd.DateOffset(years=years)+pd.Timedelta(days=21)
@@ -70,7 +68,6 @@ def collect(geometry, start, end, cloud=60, source='all', history_years=3):
             try:
                 rows=future.result()
                 if rows:
-                    # Several granules on the same date -> daily mean of polygon means.
                     frames.append(pd.DataFrame(rows).groupby('date').mean(numeric_only=False))
             except Exception:
                 warnings.append(f'Источник {name} недоступен; его данные не использованы.')
@@ -105,7 +102,6 @@ def analyze(frame, start, end, model_dir):
     if len(gaps):
         x=reconstructor.build_features(df,gaps)
         prediction=reconstructor.predict_features(x)
-        # No confident long-range reconstruction: leave daily display gaps > 30 days from ALL observations.
         distances=x[['ndvi_left0_days','ndvi_right0_days']].min(axis=1)
         reliable=distances.le(30)
         restored.loc[gaps]=np.where(reliable,prediction,np.nan)

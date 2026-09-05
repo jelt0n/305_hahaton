@@ -1,4 +1,3 @@
-"""V2 temporal/sensor features. Every query row is concealed before fitting curves."""
 import numpy as np
 import pandas as pd
 from scipy.interpolate import PchipInterpolator, UnivariateSpline
@@ -59,8 +58,6 @@ def features_v2(frame, indices):
             ht=past.doy.to_numpy(dtype=float);hy=past.primary_ndvi.to_numpy(dtype=float)
             w=np.exp(-.5*((tt[:,None]-ht[None,:])/10)**2);denom=w.sum(axis=1)
             out[f'v2_year_offset_{offset}']=np.divide(w@hy,denom,out=np.full(len(tt),np.nan),where=denom>1e-6)
-        # Satellite presence on other fields that day can indicate an acquisition opportunity.
-        # It does not contain the target field's hidden sensor/value.
         peers=context[(context.anon_polygon_id!=field)&(context.year==year)]
         for col in SENSORS:
             counts=peers.groupby('date')[col].count()
