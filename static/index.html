@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#183f32"><title>Поле — спутниковый мониторинг</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="/static/style.css">
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="/static/app.js"></script>
+  <script defer src="/static/timeseries.js"></script>
+</head>
+<body>
+<header><a class="brand" href="/" aria-label="Поле, главная"><span class="brand-icon">▧</span> поле<span class="brand-dot">.</span></a><span class="header-caption">СПУТНИКОВЫЙ МОНИТОРИНГ</span><div class="connection" id="connection">● Проверяем Earth Engine</div></header>
+<main>
+  <aside>
+    <div class="eyebrow">ВАШЕ ПОЛЕ. ОБЪЕКТИВНЫЕ ДАННЫЕ.</div>
+    <h1>Что растёт<br>за цифрами.</h1>
+    <p class="intro">Выберите участок на карте и оцените растительность по спутниковым данным.</p>
+    <section class="field-card">
+      <div class="section-label"><span>01 / УЧАСТОК</span><span class="tag">OSM</span></div>
+      <h2 id="field-name">Найдите своё поле</h2>
+      <p id="field-description">Загрузите поля в видимой области и нажмите на контур участка.</p>
+      <a id="osm-link" target="_blank" rel="noopener noreferrer" hidden>Открыть в OpenStreetMap ↗</a>
+    </section>
+    <section class="period-section">
+      <div class="section-label">02 / ПЕРИОД НАБЛЮДЕНИЯ</div>
+      <div class="date-row">
+        <div><label for="start">С</label><div class="date-field"><input id="start" class="date-text" type="text" placeholder="ДД.ММ.ГГГГ" maxlength="10" required aria-label="Начало периода, ДД.ММ.ГГГГ"><span class="date-calendar">▦<input id="start-calendar" type="date" min="2017-03-28" aria-label="Выбрать начало периода в календаре"></span></div></div>
+        <div><label for="end">По</label><div class="date-field"><input id="end" class="date-text" type="text" placeholder="ДД.ММ.ГГГГ" maxlength="10" required aria-label="Конец периода, ДД.ММ.ГГГГ"><span class="date-calendar">▦<input id="end-calendar" type="date" min="2017-03-28" aria-label="Выбрать конец периода в календаре"></span></div></div>
+      </div>
+      <div class="presets"><button data-days="30" class="active">30 дней</button><button data-days="90">90 дней</button><button data-days="180">Полгода</button></div>
+      <label class="cloud-label" for="cloud">Облачность сцены <output id="cloud-value">до 60%</output></label>
+      <input id="cloud" type="range" min="0" max="100" step="5" value="60">
+      <p class="micro">Облака, тени и снег дополнительно исключаются по маске SCL.</p>
+      <button id="calculate" class="primary" disabled>Рассчитать NDVI <span>↗</span></button>
+      <p class="status" id="analysis-status" role="status" aria-live="polite">Сначала выберите участок на карте.</p>
+      <label class="cloud-label" for="series-source">Источники временного ряда</label>
+      <select id="series-source"><option value="all">Sentinel-2 + Landsat + MODIS</option><option value="s2">Только Sentinel-2</option></select>
+      <button id="load-series" class="secondary" disabled>Восстановить ряд и найти аномалии</button>
+      <p class="micro">Период до 120 дней. Историческая норма — по трём предыдущим годам. Сбор данных может занять несколько минут.</p>
+      <p id="series-status" class="status" role="status" aria-live="polite"></p>
+      <section id="map-day-control" class="map-day-control" hidden aria-label="NDVI участка по дням">
+        <label class="day-mode"><input id="color-by-day" type="checkbox" checked> Окрашивать участок по выбранному дню</label>
+        <div class="day-heading"><button id="day-previous" aria-label="Предыдущий день">‹</button><output id="map-day-date" for="map-day-slider"></output><button id="day-next" aria-label="Следующий день">›</button></div>
+        <input id="map-day-slider" type="range" min="0" max="0" value="0" step="1" aria-label="День для окраски участка">
+        <div class="day-bounds"><span id="map-day-start"></span><span id="map-day-end"></span></div>
+        <p id="map-day-value" role="status" aria-live="polite"></p>
+        <div class="gradient"></div><div class="legend-ticks"><span>−1</span><span>0</span><span>+1</span></div>
+        <p class="micro">Цвет всего контура — средний NDVI за день. Это не попиксельный снимок. Серый цвет означает отсутствие данных.</p>
+      </section>
+    </section>
+    <section id="results" hidden>
+      <div class="section-label">03 / СОСТОЯНИЕ РАСТИТЕЛЬНОСТИ</div>
+      <div class="mean-row"><strong id="mean">—</strong><div>Средний NDVI<br><span>медианный композит</span></div></div>
+      <div class="metrics"><div>Минимум<b id="minimum">—</b></div><div>Максимум<b id="maximum">—</b></div><div>Покрытие<b id="coverage">—</b></div></div>
+      <p id="scene-info" class="micro"></p><p id="result-period" class="micro"></p>
+      <div class="layer-controls"><label><input type="checkbox" id="show-ndvi" checked> Слой NDVI</label><label>Непрозрачность <input id="opacity" type="range" min="0" max="1" step="0.05" value="0.85"></label></div>
+      <button class="secondary" id="download">Скачать результат · GeoJSON ↓</button>
+    </section>
+    <details><summary>Как это работает</summary><p>Границы полей — объекты OpenStreetMap с тегом landuse=farmland. Это картографические контуры, а не кадастровые границы.</p><p>NDVI = (B8 − B4) / (B8 + B4). Сервис использует Sentinel-2 SR Harmonized и медиану NDVI за выбранный период с расчётом на сетке 10 м. Покрытие — доля площади с доступными пикселями.</p><p>Высокое значение обычно связано с густой зелёной растительностью. Интерпретация зависит от культуры и сезона; NDVI сам по себе не определяет урожайность.</p></details>
+    <div class="sidebar-footer"><span class="live-dot"></span> Sentinel-2 · Landsat · MODIS · ERA5-Land</div>
+  </aside>
+  <section class="map-panel" aria-label="Интерактивная карта полей">
+    <div id="map"></div>
+    <div class="map-top"><div class="map-title"><span class="live-dot"></span> Обзор участков <small>OpenStreetMap</small></div><button id="locate" class="map-button" title="Моё местоположение" aria-label="Моё местоположение">◎</button></div>
+    <div class="map-search"><button id="load-fields">⌕ &nbsp; Найти поля в этой области</button><div id="map-status" role="status" aria-live="polite">Перемещайте карту и приближайте нужный участок</div></div>
+    <div class="drawing-tools"><button id="draw-field">Нарисовать участок</button><button id="finish-field" hidden>Завершить контур</button><button id="cancel-field" hidden>Отмена</button></div>
+    <div class="legend"><div class="legend-title">Индекс растительности <b>NDVI</b></div><div class="gradient"></div><div class="legend-ticks"><span>−1</span><span>0</span><span>+1</span></div><p>Низкий <span>Высокий</span></p></div>
+    <div class="map-coordinate" id="coordinates">45.0500° N · 38.9000° E</div>
+    <section id="series-panel" class="series-panel" hidden aria-label="Временной ряд NDVI">
+      <div class="series-heading"><div><h2>Динамика растительности</h2><p id="series-summary" class="micro"></p></div><button id="close-series" aria-label="Закрыть график">×</button></div>
+      <div class="chart-options"><label><input id="chart-observed" type="checkbox" checked> Наблюдения</label><label><input id="chart-restored" type="checkbox" checked> Восстановление</label><label><input id="chart-normal" type="checkbox" checked> Историческая норма ± σ</label></div>
+      <div id="series-chart"></div>
+      <p class="micro">Температура: красная линия — среднесуточная, серая пунктирная — историческая норма. Фон графика NDVI: красный — высокая температура, синий — низкая, жёлтый — угнетение.</p>
+      <div id="temperature-chart"></div>
+      <label class="micro" for="series-day">Выберите дату для подробностей</label><input id="series-day" type="range" min="0" value="0" step="1">
+      <p id="series-detail" class="micro"></p>
+      <div id="series-episodes"></div>
+      <p id="series-note" class="micro"></p>
+      <button id="download-series" class="secondary">Скачать временной ряд · CSV</button>
+    </section>
+  </section>
+</main>
+<noscript>Для работы интерактивной карты включите JavaScript.</noscript>
+</body>
+</html>

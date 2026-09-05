@@ -1,0 +1,12 @@
+fastapi>=0.115,<1
+uvicorn[standard]>=0.34,<1
+earthengine-api>=1.5,<2
+httpx>=0.28,<1
+shapely>=2.0,<3
+pyproj>=3.6,<4
+python-dotenv>=1.0,<2
+pytest>=8,<10
+pandas>=2.2,<4
+numpy>=2.0,<3
+scipy>=1.14,<2
+catboost>=1.2.7,<2

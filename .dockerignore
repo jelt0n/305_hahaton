@@ -1,0 +1,7 @@
+.env
+.runtime
+.venv
+.git
+tmp
+**/__pycache__
+**/*service-account*.json

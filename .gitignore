@@ -1,0 +1,69 @@
+# Local Python installations, environments and caches
+.venv/
+venv/
+.runtime/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Local configuration and Earth Engine / Google credentials
+.env
+.env.*
+!.env.example
+*service-account*.json
+*service_account*.json
+application_default_credentials.json
+credentials.json
+.config/earthengine/
+.config/gcloud/
+*.pem
+*.key
+
+# Local data, exports and temporary results (not needed by the live service)
+/data/
+/datasets/
+/outputs/
+/tmp/
+*.csv
+*.parquet
+*.pkl
+*.joblib
+*.npy
+*.npz
+*.log
+*.tmp
+
+# Offline hackathon training, submissions and research
+/experiments/
+/.experiments/
+catboost_info/
+/gapfill/experiment_*.py
+/gapfill/finalize_v2.py
+/train_improved.cmd
+/make_submission.py
+/make_submission.cmd
+/requirements-experiments.txt
+/RESEARCH*.md
+
+# The web service loads models/ndvi; retain its weights and configuration.
+# Other models and training metrics are offline experiment artifacts.
+/models/*
+!/models/ndvi/
+/models/ndvi/*
+!/models/ndvi/config.json
+!/models/ndvi/model.cbm
+
+# Machine-specific editor and OS files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+Desktop.ini
